@@ -56,4 +56,5 @@ class VortaDBKeyring(VortaKeyring):
 
     @classmethod
     def get_priority(cls):
-        return 1 if SettingsModel.get(key='use_system_keyring').value else 10
+        setting = SettingsModel.get_or_none(key='use_system_keyring')
+        return 10 if setting is not None and not setting.value else 1
