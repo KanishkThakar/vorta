@@ -13,9 +13,26 @@ import vorta.borg
 import vorta.utils
 import vorta.views.dialogs.repo.repo_add
 from tests.integration.conftest import all_workers_finished
+from vorta.keyring.abc import VortaKeyring
+from vorta.keyring.db import VortaDBKeyring
+from vorta.store.models import RepoPassword, SettingsModel
 
 LONG_PASSWORD = 'long-password-long'
 TEST_REPO_NAME = 'TEST - REPONAME'
+
+
+def test_password_storage_is_isolated(tmp_path):
+    """Integration-test passphrases must stay in the temporary settings database."""
+    assert SettingsModel.get(key='use_system_keyring').value is False
+    keyring = VortaKeyring.get_keyring()
+    assert isinstance(keyring, VortaDBKeyring)
+
+    repo_url = str(tmp_path / 'keyring-test-repo')
+    keyring.set_password('vorta', repo_url, LONG_PASSWORD)
+    assert RepoPassword.get(url=repo_url).password == LONG_PASSWORD
+    assert keyring.get_password('vorta', repo_url) == LONG_PASSWORD
+    keyring.delete_password('vorta', repo_url)
+    assert not RepoPassword.select().where(RepoPassword.url == repo_url).exists()
 
 
 def test_create_repo(qapp, qtbot, monkeypatch, choose_file_dialog, tmpdir):

@@ -179,6 +179,9 @@ def init_db(qapp, qtbot, tmpdir_factory, create_test_repo):
     )
     vorta.store.connection.init_db(mock_db)
 
+    # Each new database restores the default, which enables the real system keyring.
+    SettingsModel.update(value=False).where(SettingsModel.key == 'use_system_keyring').execute()
+
     default_profile = BackupProfileModel(name='Default')
     default_profile.save()
 
